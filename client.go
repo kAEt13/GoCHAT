@@ -8,64 +8,64 @@ import (
 )
 
 type client struct {
-	conn net.Conn
-	nick string
-	room *room
+	conn     net.Conn
+	nick     string
+	room     *room
 	commands chan<- commands
 }
 
-func (c *client) readInput () {
+func (c *client) readInput() {
 	for {
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 		if err != nil {
 			return
 		}
-		msg = strings.Trim(msg,"\r\n")
+		msg = strings.Trim(msg, "\r\n")
 
 		args := strings.Split(msg, " ")
 		cmd := strings.TrimSpace(args[0])
-		switch cmd{
+		switch cmd {
 		case "/nick":
 			c.commands <- commands{
-				id: CMD_NICK,
+				id:     CMD_NICK,
 				client: c,
-				args: args,
+				args:   args,
 			}
 		case "/join":
 			c.commands <- commands{
-				id: CMD_JOIN,
+				id:     CMD_JOIN,
 				client: c,
-				args: args,
+				args:   args,
 			}
 		case "/rooms":
 			c.commands <- commands{
-				id: CMD_ROOMS,
+				id:     CMD_ROOMS,
 				client: c,
-				args: args,
+				args:   args,
 			}
 		case "/msg":
 			c.commands <- commands{
-				id: CMD_MSG,
+				id:     CMD_MSG,
 				client: c,
-				args: args,
+				args:   args,
 			}
 		case "/quit":
 			c.commands <- commands{
-				id: CMD_QUIT,
+				id:     CMD_QUIT,
 				client: c,
-				args: args,
+				args:   args,
 			}
 		default:
-			c.err(fmt.Errorf("unknown command: %s",cmd))
+			c.err(fmt.Errorf("unknown command: %s", cmd))
 
 		}
 	}
 }
 
-func (c *client) err (err error) {
+func (c *client) err(err error) {
 	c.conn.Write([]byte("ERR:" + err.Error() + "\n"))
 }
 
-func (c *client) msg (msg string) {
+func (c *client) msg(msg string) {
 	c.conn.Write([]byte(">" + msg + "\n"))
 }

@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"net"
+	"strings"
+	"fmt"
 )
 
 type server struct {
@@ -33,20 +35,18 @@ func (s *server) run() {
 		}
 	}
 }
-func (s *server) newClient(conn net.Conn) {
+func (s *server) newClient(conn net.Conn) *client {
 	log.Printf("new client connection %s", conn.RemoteAddr().String())
-
-	c := &client{
-		conn:     conn,
-		nick:     "anon",
+	return &client{
+		conn: conn,
+		nick: "anon",
 		commands: s.commands,
 	}
-	c.readInput()
 }
 
 func (s *server) nick(c *client, args []string) {
 c.nick = args [1];
-c.msg(fmt.Sprintf("hello,%s", c.nicks))
+c.msg(fmt.Sprintf("hello,%s", c.nick))
 }
 
 func (s *server) join(c *client, args []string) {
@@ -62,16 +62,21 @@ func (s *server) join(c *client, args []string) {
 	r.members[c.conn.RemoteAddr()] = c;
 	s.quitThisRoom(c)
 	c.room = r 
-	r.broadcast (c,fmt.Sprintf (c.nick "%s has joined us"))
-	c.msg (fmt.Sprintf ("welcome to %s", r.name))
+	 r.broadcast(c, fmt.Sprintf("%s has joined us", c.nick))
+    c.msg(fmt.Sprintf("Welcome to %s", r.name))
 }
 
 func (s *server) msg(c *client, args []string) {
-	if c.room == nil {
-		c.err(error.new ("need to join the room firstly!"))
+	if len (args) < 2 {
+		c.msg("message required, use /msg MSG")
 		return
 	}
-	c.room.broadcast(c, c.nick+": "strings.join(args[1:len(args)], " "))
+	  if c.room == nil {
+        c.msg("You must join a room first")
+        return
+    }
+	msg := strings.Join(args[1:]," ")
+	c.room.broadcast(c, c.nick+": " +msg)
 }
 
 func (s *server) listRooms(c *client, args []string) {
@@ -79,7 +84,7 @@ func (s *server) listRooms(c *client, args []string) {
 	for name := range s.rooms{
 		rooms = append (rooms,name)
 	}
-	c.msg(fmt.Sprintf("rooms are available to join:%s",strings.join(rooms,",")))
+	c.msg(fmt.Sprintf("rooms are available to join:%s",strings.Join(rooms,",")))
 }
 
 func (s *server) quit(c *client, args []string) {
@@ -92,6 +97,6 @@ func (s *server) quit(c *client, args []string) {
 func (s *server) quitThisRoom (c *client){
 	if c.room != nil{
 		delete(c.room.members, c.conn.RemoteAddr())
-		c.room.broadcast (c,fmt.Sprintf(c.nick, "succesfully leave this room"))
+	 c.room.broadcast(c, fmt.Sprintf("%s successfully left this room", c.nick))
 	}
 }

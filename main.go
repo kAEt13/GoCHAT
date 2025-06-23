@@ -21,6 +21,7 @@ func main() {
 			log.Fatalf("unable to connect server:%s", err.Error())
 			continue
 		}
-		go s.newClient(conn)
+		c := s.newClient(conn)
+		go c.readInput()
 	}
 }
